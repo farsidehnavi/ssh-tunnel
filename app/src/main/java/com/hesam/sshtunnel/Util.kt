@@ -8,9 +8,9 @@ import android.widget.Toast
 object Util {
     private val main = Handler(Looper.getMainLooper())
 
-    fun toast(ctx: Context, msg: String) {
+    fun toast(ctx: Context, msg: String, long: Boolean = false) {
         val app = ctx.applicationContext
-        main.post { Toast.makeText(app, msg, Toast.LENGTH_SHORT).show() }
+        main.post { Toast.makeText(app, msg, if (long) Toast.LENGTH_LONG else Toast.LENGTH_SHORT).show() }
     }
 
     fun ping(ctx: Context) {

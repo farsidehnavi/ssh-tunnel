@@ -24,6 +24,7 @@ class TunnelVpnService : VpnService() {
         @Volatile var running = false
         @Volatile var state = "Disconnected"
         @Volatile var client: SshClient? = null
+        @Volatile var lastError = ""
 
         fun updateTiles(ctx: Context) {
             try {
@@ -45,7 +46,15 @@ class TunnelVpnService : VpnService() {
             return START_NOT_STICKY
         }
         if (alive) return START_NOT_STICKY
-        startFg()
+        lastError = ""
+        try {
+            startFg()
+        } catch (e: Throwable) {
+            lastError = "Foreground service failed: " + e
+            Util.toast(this, lastError, true)
+            stopAll()
+            return START_NOT_STICKY
+        }
         alive = true
         running = true
         state = "Connecting..."
@@ -114,8 +123,11 @@ class TunnelVpnService : VpnService() {
                 }
             }
         } catch (_: InterruptedException) {
-        } catch (e: Exception) {
-            if (alive) Util.toast(this, "Failed: " + (e.message ?: e.toString()))
+        } catch (e: Throwable) {
+            if (alive) {
+                lastError = e.javaClass.simpleName + ": " + (e.message ?: "")
+                Util.toast(this, "Failed: " + lastError, true)
+            }
         } finally {
             stopAll()
         }

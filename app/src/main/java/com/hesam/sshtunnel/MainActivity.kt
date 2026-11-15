@@ -24,6 +24,7 @@ class MainActivity : Activity() {
     private lateinit var statusView: TextView
     private lateinit var connectBtn: Button
     private lateinit var grantBtn: Button
+    private lateinit var errorView: TextView
     private val h = Handler(Looper.getMainLooper())
     private val tick = object : Runnable {
         override fun run() {
@@ -71,6 +72,11 @@ class MainActivity : Activity() {
         grantBtn = button("Grant file access") { ensureStorage() }
         root.addView(grantBtn)
 
+        errorView = text("", 12f, Color.parseColor("#FF6B6B"))
+        errorView.setPadding(0, dp(16), 0, 0)
+        errorView.setTextIsSelectable(true)
+        root.addView(errorView)
+
         val info = text(
             "Config file:\n" + Config.file.path +
                 "\n\nEdit it with any text editor, then reconnect.\n\n" +
@@ -80,7 +86,10 @@ class MainActivity : Activity() {
         info.setPadding(0, dp(24), 0, 0)
         root.addView(info)
 
-        setContentView(root)
+        val scroll = android.widget.ScrollView(this)
+        scroll.setBackgroundColor(Color.parseColor("#121212"))
+        scroll.addView(root)
+        setContentView(scroll)
         if (savedInstanceState == null) ensureStorage()
     }
 
@@ -118,7 +127,11 @@ class MainActivity : Activity() {
     }
 
     private fun startVpn() {
-        startForegroundService(Intent(this, TunnelVpnService::class.java).setAction(TunnelVpnService.ACTION_START))
+        try {
+            startForegroundService(Intent(this, TunnelVpnService::class.java).setAction(TunnelVpnService.ACTION_START))
+        } catch (e: Throwable) {
+            TunnelVpnService.lastError = "Start failed: " + e
+        }
     }
 
     @Deprecated("Deprecated in Java")
@@ -134,6 +147,10 @@ class MainActivity : Activity() {
             Color.parseColor(if (st == "Connected") "#4CAF50" else "#B0B0B0")
         )
         connectBtn.text = if (TunnelVpnService.running) "Disconnect" else "Connect"
+        val crash = java.io.File(filesDir, "crash.txt")
+        val crashText = if (crash.exists()) "Last crash:\n" + crash.readText() else ""
+        errorView.text = if (TunnelVpnService.lastError.isNotEmpty()) "Error: " + TunnelVpnService.lastError
+            else crashText
         val ok = hasStorage()
         grantBtn.visibility = if (ok) View.GONE else View.VISIBLE
         if (ok) Config.ensureFile()
