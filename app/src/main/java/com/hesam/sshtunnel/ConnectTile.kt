@@ -10,8 +10,23 @@ import android.service.quicksettings.TileService
 
 class ConnectTile : TileService() {
 
+    companion object {
+        @Volatile private var instance: ConnectTile? = null
+        private val main = android.os.Handler(android.os.Looper.getMainLooper())
+
+        /** Refresh the tile right now, even while the panel is open. */
+        fun refreshNow() {
+            main.post { try { instance?.refresh() } catch (_: Throwable) {} }
+        }
+    }
+
     override fun onStartListening() {
+        instance = this
         refresh()
+    }
+
+    override fun onStopListening() {
+        if (instance === this) instance = null
     }
 
     private fun refresh() {

@@ -27,6 +27,7 @@ class TunnelVpnService : VpnService() {
         @Volatile var lastError = ""
 
         fun updateTiles(ctx: Context) {
+            ConnectTile.refreshNow()
             try {
                 TileService.requestListeningState(ctx, ComponentName(ctx, ConnectTile::class.java))
             } catch (_: Throwable) {
