@@ -164,7 +164,9 @@ misc:
   log-level: warn
 """
         )
-        TProxyService.TProxyStartService(f.absolutePath, t.fd)
+        if (!TProxyService.TProxyStartService(f.absolutePath, t.fd)) {
+            throw IllegalStateException("tun2socks failed to start")
+        }
         hevStarted = true
     }
 
